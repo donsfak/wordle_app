@@ -3,20 +3,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
+import 'package:wordle/wordList.dart';
 import 'package:wordle/wordle/wordle.dart';
 
-const List<String> wordList = [
-  'debug',
-  'state',
-  'build',
-  'input',
-  'float',
-  'mouse',
-  'POINT',
-  'VALID',
-  'STACK',
-  'CLASS',
-];
+const List<String> wordList = WordList;
 
 // Énumérons le statut du jeu
 enum GameStatus { playing, submitting, lost, won }
