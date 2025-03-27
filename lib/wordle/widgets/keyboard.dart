@@ -1,8 +1,10 @@
-// ignore_for_file: unused_element_parameter
+// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:wordle/app/app_colors.dart'; // Pour les couleurs spécifiques si nécessaire
 import 'package:wordle/wordle/models/letter_model.dart';
 
+// Disposition standard du clavier QWERTY
 const _qwerty = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
@@ -21,108 +23,157 @@ class Keyboard extends StatelessWidget {
   final void Function(String) onKeyTapped;
   final VoidCallback onDeleteTapped;
   final VoidCallback onEnterTapped;
-  final Set<Letter> letters;
+  final Set<Letter> letters; // Set contenant l'état des lettres utilisées
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children:
-          _qwerty
-              .map(
-                (keyrow) => Row(
+    final theme = Theme.of(context); // Accéder au thème
+    final bool isDark = theme.brightness == Brightness.dark;
+
+    // Ajouter un Padding autour de l'ensemble du clavier pour éviter
+    // que les touches ne collent aux bords de l'écran.
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 4.0), // Léger padding horizontal global
+      child: Column(
+        // Génère les lignes du clavier
+        children: _qwerty
+            .map(
+              (keyRow) => Padding(
+                // Ajouter un léger espace vertical entre les lignes
+                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children:
-                      keyrow.map((letter) {
-                        if (letter == 'DEL') {
-                          return Expanded(
-                            child: _KeyboardButton.delete(
-                              onTap: onDeleteTapped,
+                  // Utiliser spacing peut aider si Flexible ne suffit pas, mais Flexible est mieux
+                  // spacing: 4.0, // Espace horizontal entre les touches
+                  children: keyRow.map(
+                    (letter) {
+                      // Trouver le statut de la lettre actuelle (si elle a été jouée)
+                      final currentLetter = letters.firstWhere(
+                        (e) => e.val == letter,
+                        orElse: () =>
+                            Letter.empty(), // Lettre vide si non trouvée
+                      );
+
+                      // Déterminer la couleur de fond de la touche
+                      Color keyColor = isDark
+                          ? darkKeyDefaultColor
+                          : lightKeyDefaultColor; // Couleur par défaut
+                      Color keyTextColor = isDark
+                          ? darkKeyboardTextColor
+                          : lightKeyboardTextColor; // Couleur texte par défaut
+
+                      switch (currentLetter.status) {
+                        case LetterStatus.notInWord:
+                          keyColor =
+                              isDark ? darkNotInWordColor : lightNotInWordColor;
+                          break;
+                        case LetterStatus.inWord:
+                          keyColor =
+                              isDark ? darkInWordColor : lightInWordColor;
+                          break;
+                        case LetterStatus.correct:
+                          keyColor =
+                              isDark ? darkCorrectColor : lightCorrectColor;
+                          break;
+                        default:
+                          // Garder la couleur par défaut
+                          break;
+                      }
+
+                      Widget
+                          keyWidget; // Variable pour stocker le widget bouton+padding
+
+                      // Gérer les touches spéciales ENTER et DEL
+                      if (letter == 'ENTER') {
+                        keyWidget = Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 2.0), // Padding réduit un peu
+                          child: ElevatedButton(
+                            style: theme.elevatedButtonTheme.style?.copyWith(
+                              padding: MaterialStateProperty.all(
+                                  const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 14)), // Padding interne ajusté
+                              backgroundColor: MaterialStateProperty.all(
+                                  keyColor), // Peut-être une couleur spéciale pour ENTER?
+                              foregroundColor:
+                                  MaterialStateProperty.all(keyTextColor),
                             ),
-                          );
-                        } else if (letter == 'ENTER') {
-                          return Expanded(
-                            child: _KeyboardButton.enter(onTap: onEnterTapped),
-                          );
-                        }
-
-                        final letterKey = letters.firstWhere(
-                          (e) => e.val == letter,
-                          orElse: () => Letter.empty(),
-                        );
-
-                        return Expanded(
-                          child: _KeyboardButton(
-                            letter: letter,
-                            onTap: () => onKeyTapped(letter),
-                            backgroundColor:
-                                letterKey.status == LetterStatus.correct
-                                    ? Colors.green
-                                    : letterKey.status == LetterStatus.inWord
-                                    ? Colors.orange
-                                    : letterKey.status == LetterStatus.notInWord
-                                    ? Colors.grey.shade800
-                                    : Colors.grey,
+                            onPressed: onEnterTapped,
+                            child: const Text('ENTER'),
                           ),
                         );
-                      }).toList(),
+                        // Pour ENTER, utiliser Expanded pourrait être mieux pour prendre plus de place
+                        // return Expanded(child: keyWidget);
+                        // OU pour Flexible, spécifier un flex plus grand:
+                        // return Flexible(flex: 2, child: keyWidget); // Prend plus de place relative
+                      } else if (letter == 'DEL') {
+                        keyWidget = Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                          child: ElevatedButton(
+                            style: theme.elevatedButtonTheme.style?.copyWith(
+                              padding: MaterialStateProperty.all(
+                                  const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 14)), // Padding interne ajusté
+                              backgroundColor: MaterialStateProperty.all(
+                                  keyColor), // Peut-être une couleur spéciale pour DEL?
+                              foregroundColor:
+                                  MaterialStateProperty.all(keyTextColor),
+                            ),
+                            onPressed: onDeleteTapped,
+                            child:
+                                const Icon(Icons.backspace_outlined, size: 18),
+                          ),
+                        );
+                        // Pour DEL aussi, un flex plus grand peut être pertinent
+                        // return Flexible(flex: 2, child: keyWidget);
+                      } else {
+                        // Touches de lettres normales
+                        keyWidget = Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                          child: ElevatedButton(
+                            style: theme.elevatedButtonTheme.style?.copyWith(
+                              // Réduire un peu le padding interne si les touches sont trop larges
+                              padding: MaterialStateProperty.all(
+                                  const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 14)), // Padding interne réduit
+                              backgroundColor:
+                                  MaterialStateProperty.all(keyColor),
+                              foregroundColor:
+                                  MaterialStateProperty.all(keyTextColor),
+                              // Optionnel: forcer une taille minimum plus petite si besoin
+                              // minimumSize: MaterialStateProperty.all(Size(20, 48)),
+                            ),
+                            onPressed: () => onKeyTapped(letter),
+                            child: Text(letter),
+                          ),
+                        );
+                        // Pour les lettres normales, flex: 1 est implicite avec Flexible seul
+                        // return Flexible(child: keyWidget);
+                      }
+
+                      // CORRECTION : Envelopper chaque touche dans un Flexible
+                      // Utiliser flex: pour donner plus d'importance à ENTER/DEL si souhaité
+                      if (letter == 'ENTER' || letter == 'DEL') {
+                        return Flexible(
+                            flex: 3,
+                            fit: FlexFit.tight,
+                            child: keyWidget); // Prend plus de place
+                      } else {
+                        return Flexible(
+                            flex: 2,
+                            fit: FlexFit.tight,
+                            child: keyWidget); // Prend une place normale
+                      }
+                    },
+                  ).toList(),
                 ),
-              )
-              .toList(),
-    );
-  }
-}
-
-class _KeyboardButton extends StatelessWidget {
-  const _KeyboardButton({
-    super.key,
-    this.height = 45,
-    this.width = 38,
-    required this.letter,
-    required this.onTap,
-    required this.backgroundColor,
-  });
-
-  factory _KeyboardButton.delete({required VoidCallback onTap}) =>
-      _KeyboardButton(
-        width: 56,
-        letter: 'DEL',
-        onTap: onTap,
-        backgroundColor: Colors.grey,
-      );
-
-  factory _KeyboardButton.enter({required VoidCallback onTap}) =>
-      _KeyboardButton(
-        width: 56,
-        letter: 'ENTER',
-        onTap: onTap,
-        backgroundColor: Colors.grey,
-      );
-
-  final double height;
-  final double width;
-  final String letter;
-  final VoidCallback onTap;
-  final Color backgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-      child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(4),
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            width: width,
-            height: height,
-            alignment: Alignment.center,
-            child: Text(
-              letter,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
