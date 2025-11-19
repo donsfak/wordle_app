@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:wordle/app/app_colors.dart';
 import 'package:wordle/wordle/views/wordle_screen.dart'; // Assurez-vous d'importer l'écran
 
@@ -10,9 +9,16 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Appliquer une police via Google Fonts (ex: Poppins)
-    // Si vous avez déclaré une police locale dans pubspec.yaml, mettez son nom ici.
-    final textTheme = GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme);
+    // Use system fonts to avoid AssetManifest.json issues on Linux
+    // Google Fonts can cause issues on some desktop platforms
+    final textTheme = Theme.of(context).textTheme.copyWith(
+          bodyLarge: const TextStyle(fontFamily: 'Roboto'),
+          bodyMedium: const TextStyle(fontFamily: 'Roboto'),
+          displayLarge: const TextStyle(
+              fontFamily: 'Roboto', fontWeight: FontWeight.bold),
+          titleLarge: const TextStyle(
+              fontFamily: 'Roboto', fontWeight: FontWeight.bold),
+        );
 
     return MaterialApp(
       title: 'Flutter Wordle',
